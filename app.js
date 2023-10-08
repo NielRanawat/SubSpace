@@ -35,7 +35,7 @@ app.get("/api/blog-stats", (req, res) => {
         // Finding privacy in titles
         let titleContainingPrivacy = 0;
         data.blogs.forEach(element => {
-            if (_.includes(_.lowerCase(element.title), "privacy")) {
+            if (_.includes(_.lowerCase(element.title) , "privacy")) {
                 titleContainingPrivacy++;
             }
         })
@@ -55,8 +55,28 @@ app.get("/api/blog-stats", (req, res) => {
 
 
 app.get("/api/blog-search?" , (req , res) => {
-    foundBlogs = [];
-    
+    fetch(url, {
+        method: 'GET',
+        headers: headers,
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        let foundBlogs = [];
+        data.blogs.forEach(element => {
+            if(_.includes(element.title , req.query.title)){
+                foundBlogs.push(element);
+            }   
+        })
+        res.send(foundBlogs);
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+    });
 });
 
 
