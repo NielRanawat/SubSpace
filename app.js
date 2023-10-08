@@ -21,6 +21,7 @@ app.get("/api/blog-stats", (req, res) => {
     .then(data => {
         // Finding number of blogs
         const numberOfBlogs = _.size(data.blogs);
+        console.log("Number of blogs : " , numberOfBlogs);
         
         // Finding the longest title
         let longestTitle = "";
@@ -31,6 +32,7 @@ app.get("/api/blog-stats", (req, res) => {
                 longestTitleLength = _.size(element.title);
             }
         });
+        console.log("Longest title : " , longestTitle);
 
         // Finding privacy in titles
         let titleContainingPrivacy = 0;
@@ -39,14 +41,16 @@ app.get("/api/blog-stats", (req, res) => {
                 titleContainingPrivacy++;
             }
         })
+        console.log("Number of titles containing privacy : " , titleContainingPrivacy);
 
         // Array of unique blog titles
         let uniqueTitle = [];
         data.blogs.forEach(element => {
-            if(!_.includes(uniqueTitle , element.title)){
-                uniqueTitle.push(element.title);   
+            if(!_.includes(uniqueTitle , _.lowerCase(element.title))){
+                uniqueTitle.push(_.lowerCase(element.title));   
             }
         })
+        res.send(uniqueTitle);
     })
     .catch(error => {
         console.error('Fetch error:', error);
@@ -66,13 +70,20 @@ app.get("/api/blog-search?" , (req , res) => {
         return response.json();
     })
     .then(data => {
-        let foundBlogs = [];
-        data.blogs.forEach(element => {
-            if(_.includes(element.title , req.query.title)){
-                foundBlogs.push(element);
-            }   
-        })
-        res.send(foundBlogs);
+        // Using lodash memoize to cache the search results
+        function findBlog(blogTitle){
+            let foundBlogs = [];
+            data.blogs.forEach(element => {
+                if(_.includes(element.title , blogTitle)){
+                    foundBlogs.push(element);
+                }   
+            })
+            return foundBlogs;
+        }
+        const memoizeFindBlog = _.memoize(findBlog);
+
+        // Calling the memoize function
+        res.send(memoizeFindBlog(req.query.title));
     })
     .catch(error => {
         console.error('Fetch error:', error);
